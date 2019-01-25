@@ -1,0 +1,29 @@
+{
+  "name": "bandcamp-wishlist",
+  "version": "1.0.1",
+  "description": "Download bandcamp wishlist music",
+  "main": "wishlist.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:andywillis/bandcamp-wishlist.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.6.1",
+    "async-throttle": "^1.1.0",
+    "chalk": "^2.4.2",
+    "cheerio": "^1.0.0-rc.2",
+    "colors": "^1.3.3",
+    "draftlog": "^1.0.12",
+    "node-fetch": "^2.3.0",
+    "request": "^2.88.0",
+    "single-line-log": "^1.1.2"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.12.1",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.14.0"
+  }
+}
