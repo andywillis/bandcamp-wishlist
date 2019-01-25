@@ -96,9 +96,7 @@ async function* fetchAlbumHTML(promises) {
   }
 }
 
-async function main() {
-
-  const urls = ['https://aesoprock.bandcamp.com/album/malibu-ken', 'https://bringmethehorizon.bandcamp.com/album/amo'];
+async function main(urls) {
 
   const links = urls || await getWishlistLinks();
   const promises = getAlbumPromises(links);
