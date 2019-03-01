@@ -2,8 +2,14 @@ const init = require('./main');
 
 const [,, ...args] = process.argv;
 
-if (args.length) {
-  init(args);
-} else {
-  init();
-}
+(async () => {
+  try {
+    if (args.length) {
+      await init(args);
+    } else {
+      await init();
+    }  
+  } catch (e) {
+    console.log(e);
+  }
+})();
