@@ -12,8 +12,12 @@ const IO = require('./lib/io');
 
 const throttle = createThrottle(2);
 
+let count = 0;
+const limit = 3;
+let interval;
+
 const regex = {
-  badCharsre: /[\\/:*?"<>|]/g,
+  badCharsre: /[\\/:*?"<>|.]/g,
   artistre: /artist: "(.*?)"/,
   albumre: /album_title: "(.*?)"/,
   tracksre: /trackinfo: (\[.*\])/i
@@ -40,7 +44,7 @@ function pickInfo(txt) {
 }
 
 function getAlbumPromises(links) {
-  return links.map(link => throttle(() => fetch(link)));
+  return Promise.all(links.map(link => throttle(() => fetch(link))));
 }
 
 function log(message) {
@@ -78,6 +82,7 @@ async function getWishlistLinks() {
 
 function downloadTracks(tracks, params, status) {
   const { albumPath, folderName } = params;
+  count++;
   each(tracks, ({ filename, url }, trackCallback) => {
     const stream = request(url);
     stream.on('error', err => console.log(err));
@@ -86,20 +91,14 @@ function downloadTracks(tracks, params, status) {
     stream.on('end', trackCallback);
   }, () => {
     status(['* '.grey, `${folderName}`, ' ✓'.green].join(''));
+    count--;
   });
 }
 
-async function* fetchAlbumHTML(promises) {
-  for await (const data of promises) {
-    const txt = await data.text();
-    yield pickInfo(txt);
-  }
-}
-
-async function main(urls) {
+async function init(urls) {
 
   const links = urls || await getWishlistLinks();
-  const promises = getAlbumPromises(links);
+  const promises = await getAlbumPromises(links);
   const noOfAlbums = promises.length;
   const wishlistRoot = path.join(__dirname, 'wishlist');
 
@@ -110,37 +109,51 @@ async function main(urls) {
   log('*************'.grey);
   log('*'.grey);
 
-  for await (const albumInfo of fetchAlbumHTML(promises)) {
+  async function iterate() {
 
-    const { folderName, trackJSON } = albumInfo;
-    const albumPath = path.join(wishlistRoot, folderName);
-    const params = { albumPath, folderName, noOfAlbums };
-    const status = console.draft();
+    if (promises.length && count < limit) {
 
-    status(['* '.grey, `${folderName}`].join(''));
+      const promise = promises.shift();
+      const txt = await promise.text();
+      const albumInfo = pickInfo(txt);
 
-    if (trackJSON === 'Missing') {
-      status(['* '.grey, `${folderName}`, ' ⨯'.red].join(''));
-    } else {
-      const tracks = compileTracks(JSON.parse(trackJSON), regex.badCharsre);
-      if (!await IO.pathExists(albumPath)) {
-        await IO.addFolder(albumPath);
-        writeM3u(params, tracks);
-        downloadTracks(tracks, params, status);
+      const { folderName, trackJSON } = albumInfo;
+      const albumPath = path.join(wishlistRoot, folderName);
+      const params = { albumPath, folderName, noOfAlbums };
+      const status = console.draft();
+
+      status(['* '.grey, `${folderName}`].join(''));
+
+      if (trackJSON === 'Missing') {
+        status(['* '.grey, `${folderName}`, ' ⨯'.red].join(''));
       } else {
-        status(['* '.grey, `${folderName}`, ' O'.grey].join(''));
-      }
+ 
+        const tracks = compileTracks(JSON.parse(trackJSON), regex.badCharsre);
+ 
+        if (!await IO.pathExists(albumPath)) {
+          await IO.addFolder(albumPath);
+          writeM3u(params, tracks);
+          downloadTracks(tracks, params, status);
+        } else {
+          status(['* '.grey, `${folderName}`, ' O'.grey].join(''));
+        }
 
+      }
+    }
+
+    if (!promises.length) {
+      log('*'.grey);
+      log('*************'.grey);
+      log('Processing complete!'.rainbow);
+      clearInterval(interval);
     }
 
   }
 
-  log('*'.grey);
-  log('*************'.grey);
-  log('');
-  log('');
-
+  interval = setInterval(async () => {
+    await iterate();
+  }, 2000);
 
 }
 
-main();
+module.exports = init;
