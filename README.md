@@ -14,6 +14,6 @@ Either:
 
 Or:
 
-1) Save a copy of the complete unrolled wishlist to the root folder as an HTML page and
+1) Save a copy of the complete unrolled wishlist to the root folder as `wishlist.html` and
 
 2) Run `node wishlist`
