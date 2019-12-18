@@ -63,7 +63,7 @@ function log(message) {
 function compileTracks(arr, badCharsre) {
   return arr.map((track) => {
     if (track.file && track.file['mp3-128']) {
-      const filename = `${track.title}.mp3`.replace(badCharsre, '');
+      const filename = `${track.title.replace(badCharsre, '')}.mp3`;
       const url = track.file['mp3-128'];
       return { filename, url };
     }
